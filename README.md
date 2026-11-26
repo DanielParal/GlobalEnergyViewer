@@ -160,11 +160,10 @@ Přepínač **Evropa | Svět** v hlavičce. Část Svět (Ember):
   rok, konkrétní rok nebo posledních 12 měsíců. Klepnutím na zemi detail s mixem zdrojů.
 - **Žebříček:** stejné ukazatele jako mapa; 30 největších zemí, regiony (svět, kontinenty, EU,
   G7, G20, OECD…), jednotlivé kontinenty nebo všechny země.
-- **Srovnání:** Evropa × USA × Čína × Rusko (volitelně i EU a svět): souhrnná tabulka za poslední rok
+- **Srovnání:** EU × USA × Čína × Rusko (volitelně i svět): souhrnná tabulka za poslední rok
   nebo 12 měsíců (výroba, podíl na světě, spotřeba na obyvatele, OZE, jádro, uhlí, plyn, emise),
   mix zdrojů a vývoj od roku 2000 po letech nebo posledních 5 let po měsících (výroba, OZE,
-  vítr + slunce, uhlí, g CO₂/kWh, Mt CO₂, spotřeba na obyvatele). „Evropa“ je podle Emberu celý
-  kontinent včetně Ruska a Turecka (~5 100 TWh), EU je ~2 800 TWh.
+  vítr + slunce, uhlí, g CO₂/kWh, Mt CO₂, spotřeba na obyvatele).
 
 Toky po hranicích pro svět nejsou: nikdo je jednotně nepublikuje, Ember má jen roční/měsíční
 čistý dovoz za celou zemi.

@@ -5,7 +5,7 @@
  *   #/svet/vyroba?e=CHN,USA&g=month|year&p=1y|3y|10y|all&u=abs|pct&z=<sources>&s=<sort>
  *   #/svet/mapa?m=<metric>&y=latest|ltm|<year>
  *   #/svet/zebricek?m=<metric>&y=latest|ltm|<year>&r=top|agg|all|<region>&u=pct|abs
- *   #/svet/srovnani?e=europe,USA,CHN,RUS&g=year|month */
+ *   #/svet/srovnani?e=eu,USA,CHN,RUS,world&g=year|month */
 
 let W = null;          // world/meta.json
 const WE = {};         // entity code -> meta
@@ -879,14 +879,13 @@ async function renderWorldRank(q) {
 // Fixed colour per entity (colour follows the entity, never its rank); checked for
 // colour-blind separation of all pairs. The world is a grey dashed reference line.
 const CMP = [
-  { code: 'europe', short: 'Evropa', light: '#257de0', dark: '#338ced' },
-  { code: 'eu', short: 'EU', light: '#d28e05', dark: '#dcae1d' },
+  { code: 'eu', short: 'EU', light: '#257de0', dark: '#338ced' },
   { code: 'USA', short: 'USA', light: '#00b894', dark: '#00a888' },
   { code: 'CHN', short: 'Čína', light: '#ec4647', dark: '#eb6263' },
   { code: 'RUS', short: 'Rusko', light: '#8e44ad', dark: '#a463c4' },
   { code: 'world', short: 'Svět', light: '#8a8f98', dark: '#8f96a0', ref: true },
 ];
-const CMP_DEFAULT = ['europe', 'USA', 'CHN', 'RUS'];
+const CMP_DEFAULT = ['eu', 'USA', 'CHN', 'RUS'];
 const cmpOf = (c) => CMP.find((x) => x.code === c);
 const cmpColor = (c) => (DARK ? cmpOf(c).dark : cmpOf(c).light);
 const fmtPct1 = (x) => (x == null ? '–' : nf1.format(x) + ' %');
@@ -1004,8 +1003,7 @@ async function renderWorldCompare(q) {
   cmpTable(es, rows, g);
   cmpMix(es, rows);
   cmpTrends(es, T, x, g);
-  $('#wc-hint').textContent = 'Evropa = celý kontinent podle Emberu včetně Ruska, Turecka, Ukrajiny a Běloruska '
-    + '(Rusko je tedy v Evropě započítané i zvlášť); EU = 27 členských států. Podíly jsou z domácí výroby, emise jen z výroby elektřiny (bez dovozu). '
+  $('#wc-hint').textContent = 'EU = 27 členských států. Podíly jsou z domácí výroby, emise jen z výroby elektřiny (bez dovozu). '
     + (g === 'month' ? 'Po měsících je vidět sezónnost (slunce v létě, vítr v zimě). ' : '')
     + 'Data: Ember.';
 }
