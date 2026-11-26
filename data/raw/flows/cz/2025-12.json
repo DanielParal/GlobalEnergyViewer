@@ -1,0 +1,15 @@
+{
+  "country": "cz",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean physical flow, UTC; positive = export from country to neighbour",
+  "source": "energy-charts.info /v2/cbpf",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["at", "de", "pl", "sk"],
+  "hours": [
+    {"t": "2025-12-31T20:00Z", "v": [959.8, -2121, -566, 2078.8]},
+    {"t": "2025-12-31T21:00Z", "v": [1035.5, -1961.5, -841.2, 2066.5]},
+    {"t": "2025-12-31T22:00Z", "v": [1165.2, -1883.8, -911.2, 1970.2]},
+    {"t": "2025-12-31T23:00Z", "v": [1197.5, -1784.2, -631.5, 1757.5]}
+  ]
+}

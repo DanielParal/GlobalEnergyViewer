@@ -99,6 +99,14 @@ docs/samples/          vzorové odpovědi API
 | `power_hourly/<cc>/<yyyy-mm>.json` | hodinové MW (pro krok „hodina“); generuje se, **necommituje** (duplikuje raw) |
 | `flows_daily/<rok>.json` | denní GWh pro každou hranici v obou směrech (dny v čase Europe/Brussels) |
 | `flows_hourly/<yyyy-mm-dd>.json` | hodinový čistý tok na každé hranici, posledních 30 dní |
+| `ranking.json` | pro pohled Žebříček: za každou zemi denně (posledních 31 dní) a měsíčně výroba celkem, OZE po skupinách (slunce, vítr, voda, biomasa), spotřeba, hrubý vývoz a dovoz |
+
+### Pohledy webu
+
+- **Výroba:** skládaný graf výroby podle zdroje a čára spotřeby, souhrn (výroba, spotřeba, saldo, podíl OZE), porovnání více zemí.
+- **Toky:** mapa Evropy se saldem států a šipkami toků, po dnech/obdobích nebo po hodinách s přehráváním.
+- **Žebříček:** země seřazené podle podílu OZE na výrobě (nebo TWh z OZE) a podle salda toků
+  (TWh nebo % spotřeby), nahoře největší vývozci, dole největší dovozci.
 
 ### SQLite (`build/energy.sqlite`)
 
@@ -129,6 +137,17 @@ SELECT sum(mw) / 1000 FROM flows WHERE from_country = 'cz' AND to_country = 'de'
   `fetch.py` vypíše varování, ať ji doplníš do `config.py`.
 - Kontrola: denní součty výroby ČR z `power_daily` sedí s daty grafu energy-charts.info
   (`energy-charts.info/charts/energy/data/cz/day_2026.json`) s odchylkou < 0,01 %.
+- **Podíl OZE** = OZE / výroba bez přečerpávacích elektráren a baterií; odpad se počítá z 50 %
+  jako obnovitelný. Je to stejná definice jako řada `renewable_share_of_generation` v API:
+  za 27. 10.–25. 11. 2026 se naše čísla od ní liší průměrně o 0,16 p. b. (max. 1,4 p. b., Litva).
+  Výjimky jsou na straně API: u Norska vrací 17 % (ve skutečnosti ~97 %, vodní + vítr) a u Černé Hory 46 %.
+  Roční čísla pro kontrolu: Eurostat 2024 (čistá výroba) Dánsko 88,4 %, Portugalsko 87,5 %,
+  Chorvatsko 73,7 %, Česko 15,9 %, EU 46,9 %.
+- **Neúplná nebo vynechaná data ze zdroje:** výroba Velké Británie (`uk`) má v API jen ~0,4 GW
+  z ~30 GW (bez jádra a spotřeby), proto se nestahuje; toky UK jsou v pořádku. Ukrajina nemá výrobu
+  (404), Kypr nemá toky (ostrov). Irsko má výrobu jen ~60 % spotřeby (část zdrojů v datech chybí),
+  Kosovo nemá OZE. Velká Británie v datech toků = Velká Británie bez Severního Irska; Severní Irsko
+  je samostatný soused (`ni`).
 
 ## Nasazení (později)
 

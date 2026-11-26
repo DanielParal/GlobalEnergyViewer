@@ -1,0 +1,15 @@
+{
+  "country": "sk",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["nuclear", "lignite", "gas", "oil", "other", "hydro_run_of_river", "hydro_reservoir", "hydro_pumped_storage", "biomass", "other_renewable", "wind_onshore", "solar", "hydro_pumped_storage_consumption", "load"],
+  "hours": [
+    {"t": "2025-12-31T20:00Z", "v": [2467.1, 19.6, 216.3, 71.6, 116.8, 277.2, 19.5, 2, 104.9, 56.8, 1.4, 0, 0, 2955]},
+    {"t": "2025-12-31T21:00Z", "v": [2465.8, 19, 208.6, 70.1, 114.6, 211.1, 2.2, 0, 104, 57.2, 1.3, 0.2, -102, 2858]},
+    {"t": "2025-12-31T22:00Z", "v": [2466.8, 19.1, 207, 68.9, 113.8, 211.2, 2.1, 0, 103.1, 57.3, 1.4, 0.1, -92.5, 2794]},
+    {"t": "2025-12-31T23:00Z", "v": [2468.5, 18.8, 238.3, 69.4, 122.6, 239, 2.8, 197.8, 106.1, 54.6, 1.3, 0, 0, 2707]}
+  ]
+}

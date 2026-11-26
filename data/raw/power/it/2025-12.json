@@ -1,0 +1,12 @@
+{
+  "country": "it",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["hard_coal", "coal_gas", "gas", "oil", "waste", "other", "hydro_run_of_river", "hydro_reservoir", "hydro_pumped_storage", "battery", "biomass", "geothermal", "wind_offshore", "wind_onshore", "solar", "hydro_pumped_storage_consumption", "battery_consumption", "load"],
+  "hours": [
+    {"t": "2025-12-31T23:00Z", "v": [350.8, 479.5, 14219.5, 12, 8.8, 1821.2, 1341.2, 79.2, null, null, 387.2, null, 6.8, 1131, 0, null, null, 23901.2]}
+  ]
+}

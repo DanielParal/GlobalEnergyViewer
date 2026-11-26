@@ -63,6 +63,14 @@ a { color: var(--accent); }
   color: var(--muted); font-weight: 600;
 }
 .tabs a.active { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+@media (max-width: 430px) {
+  .brand-name { display: none; }
+  .tabs a { padding: 6px 11px; }
+}
+.seg.mini { display: inline-flex; padding: 2px; border-radius: 8px; }
+.seg.mini button { flex: none; padding: 4px 10px; min-height: 30px; font-size: 13px; }
+.legend.static span { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; margin-right: 10px; }
+.legend.static i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 
 main { max-width: 960px; margin: 0 auto; padding: 10px 10px 24px; }
 

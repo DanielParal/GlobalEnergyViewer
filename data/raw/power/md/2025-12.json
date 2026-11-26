@@ -7,6 +7,7 @@
   "license": "CC BY 4.0, attribution: energy-charts.info",
   "series": ["gas", "hydro_run_of_river", "biomass", "wind_onshore", "solar", "load"],
   "hours": [
+    {"t": "2025-12-31T20:00Z", "v": [303, 14, 2, 38, 0, 726]},
     {"t": "2025-12-31T21:00Z", "v": [289, 15, 2, 38, 0, 666]},
     {"t": "2025-12-31T22:00Z", "v": [279, 14, 2, 39, 0, 622]},
     {"t": "2025-12-31T23:00Z", "v": [278, 14, 2, 32, 0, 613]}

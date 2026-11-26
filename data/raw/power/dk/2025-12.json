@@ -1,0 +1,12 @@
+{
+  "country": "dk",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["hard_coal", "gas", "oil", "waste", "biomass", "wind_offshore", "wind_onshore", "solar", "load"],
+  "hours": [
+    {"t": "2025-12-31T23:00Z", "v": [317.6, 30, 9.9, 324, 642.5, 2520.8, 3017.4, 11.4, 4197.8]}
+  ]
+}

@@ -7,6 +7,7 @@
   "license": "CC BY 4.0, attribution: energy-charts.info",
   "series": ["lignite", "hydro_run_of_river", "hydro_reservoir", "hydro_pumped_storage", "wind_onshore", "solar", "load"],
   "hours": [
+    {"t": "2025-12-31T20:00Z", "v": [773, 137.9, 672.2, 0.6, 0, 0, 1764.2]},
     {"t": "2025-12-31T21:00Z", "v": [759.3, 135.4, 608, 0.4, 0, 0, 1698.9]},
     {"t": "2025-12-31T22:00Z", "v": [766.3, 117, 475, 0.4, 0, 0, 1615]},
     {"t": "2025-12-31T23:00Z", "v": [763.3, 79.9, 392.9, 0.4, 0, 0, 1126.5]}

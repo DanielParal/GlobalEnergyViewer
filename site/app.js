@@ -91,7 +91,7 @@ const pct = (x) => (x == null || Number.isNaN(x) ? '–' : nf1.format(x * 100) +
 function parseHash() {
   const h = location.hash.replace(/^#\/?/, '');
   const [view, qs] = h.split('?');
-  return { view: view === 'toky' ? 'toky' : 'vyroba', q: new URLSearchParams(qs || '') };
+  return { view: ['toky', 'zebricek'].includes(view) ? view : 'vyroba', q: new URLSearchParams(qs || '') };
 }
 function hashFor(view, params) {
   const qs = Object.entries(params)
@@ -112,7 +112,9 @@ function route() {
   document.querySelectorAll('.tabs a').forEach((a) => a.classList.toggle('active', a.dataset.view === view));
   if (view !== 'toky') stopPlay();
   closeSheet();
-  (view === 'toky' ? renderFlows(q) : renderProduction(q)).catch((e) => { console.error(e); showNotice(view === 'toky' ? '#m-notice' : '#p-notice', 'Chyba při načítání dat: ' + e.message); });
+  const [render, notice] = { toky: [renderFlows, '#m-notice'], zebricek: [renderRanking, '#r-notice'] }[view]
+    || [renderProduction, '#p-notice'];
+  render(q).catch((e) => { console.error(e); showNotice(notice, 'Chyba při načítání dat: ' + e.message); });
 }
 function showNotice(sel, text) { const n = $(sel); n.hidden = !text; n.textContent = text || ''; }
 
@@ -241,17 +243,20 @@ const ordered = (keys) => META.sources.map((s) => s.key).filter((k) => keys.incl
 
 function totals(table, unit) {
   const f = unit === 'MW' ? 1 / 1000 : 1; // MW per hour -> GWh
-  const gen = {}; let genAll = 0, ren = 0, any = false;
+  // renewable share = renewables (waste 50 %) / generation without storage output,
+  // the same definition energy-charts.info uses
+  const gen = {}; let genAll = 0, genPrimary = 0, ren = 0, any = false;
   const has = (arr) => (arr || []).some((v) => v != null);
   for (const [k, arr] of Object.entries(table)) {
     const s = SRC[k];
     if (!s || s.kind !== 'generation') continue;
     any ||= has(arr);
     gen[k] = sum(arr) * f; genAll += gen[k];
-    if (s.renewable) ren += gen[k];
+    if (!s.storage) genPrimary += gen[k];
+    ren += gen[k] * (Number(s.renewable) || 0);
   }
   return {
-    gen, genAll: any ? genAll : null, ren, renShare: any && genAll ? ren / genAll : null,
+    gen, genAll: any ? genAll : null, ren, renShare: any && genPrimary ? ren / genPrimary : null,
     load: has(table.load) ? sum(table.load) * f : null,
     net: has(table.net_export) ? sum(table.net_export) * f : null,
   };
@@ -260,6 +265,7 @@ function totals(table, unit) {
 async function renderProduction(q) {
   const seq = ++renderSeq;
   const st = prodState(q);
+  homeCountry = st.cs[0];
   const view = $('#view-vyroba');
   drawProdControls(st);
 
@@ -335,6 +341,11 @@ function drawProdControls(st) {
     if (v === '1d') {
       b.textContent = st.latest === D.add(today, -1) ? 'Včera' : '1 den';
       b.title = D.label(st.latest);
+    }
+    if (v === 'lastyear') {
+      const y = +st.latest.slice(0, 4) - 1;
+      b.disabled = !st.cs.some((c) => CC[c].power.years.includes(y));
+      b.title = b.disabled ? `Data za rok ${y} nejsou stažená` : '';
     }
     b.onclick = () => {
       if (v === 'custom') { go('vyroba', prodParams(st, { p: 'custom', od: st.from, do: st.to })); return; }
@@ -665,6 +676,7 @@ function drawFlowControls(st) {
   const f = META.flows;
   document.querySelectorAll('#m-period button').forEach((b) => {
     b.classList.toggle('active', b.dataset.v === st.p);
+    if (b.dataset.v === 'lastyear') b.disabled = !f.years.includes(+st.d.slice(0, 4) - 1);
     b.onclick = () => { stopPlay(); go('toky', flowParams(st, { p: b.dataset.v, h: -1 })); };
   });
   const di = $('#m-date');
@@ -913,6 +925,213 @@ function openBorderSheet(br) {
       <tr><th>Čistý tok</th><th>${esc(f)} → ${esc(t)}: ${fmtVal(Math.abs(net), unit)}</th></tr>
     </table>
     <p class="hint">Fyzické toky přes hranici. Za období se sčítají hodinové čisté toky v každém směru zvlášť.</p>`);
+}
+
+/* ===================================================== VIEW: Žebříček */
+let homeCountry = 'cz'; // highlighted in rankings (last country opened in Výroba)
+const GROUPS = [
+  ['sol', 'Slunce', 'solar'],
+  ['win', 'Vítr', 'wind_onshore'],
+  ['hyd', 'Voda', 'hydro_run_of_river'],
+  ['bio', 'Biomasa, odpad a ostatní', 'biomass'],
+];
+const RANK_DAYS = { '1d': 1, '7d': 7, '30d': 30 };
+
+async function renderRanking(q) {
+  const seq = ++renderSeq;
+  const m = q.get('m') === 'trade' ? 'trade' : 'ren';
+  const p = ['1d', '7d', '30d', 'ytd', 'lastyear'].includes(q.get('p')) ? q.get('p') : '30d';
+  const u = ['pct', 'abs'].includes(q.get('u')) ? q.get('u') : m === 'ren' ? 'pct' : 'abs';
+  const st = { m, p, u };
+  const params = (patch) => {
+    const s = { ...st, ...patch };
+    return { m: s.m, p: s.p, u: s.u === (s.m === 'ren' ? 'pct' : 'abs') ? null : s.u };
+  };
+  document.querySelectorAll('#r-metric button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.v === m);
+    b.onclick = () => go('zebricek', params({ m: b.dataset.v, u: b.dataset.v === 'ren' ? 'pct' : 'abs' }));
+  });
+  document.querySelectorAll('#r-unit button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.v === u);
+    b.textContent = b.dataset.v === 'abs' ? 'TWh' : m === 'ren' ? '% výroby' : '% spotřeby';
+    b.onclick = () => go('zebricek', params({ u: b.dataset.v }), true);
+  });
+
+  const R = await getJSON('ranking.json');
+  if (seq !== renderSeq) return;
+  if (!R) { showNotice('#r-notice', 'Chybí data žebříčku – spusťte build.py.'); return; }
+  const F = Object.fromEntries(R.fields.map((f, i) => [f, i]));
+  const ccs = Object.keys(R.countries);
+
+  // period end = latest day that most countries have complete
+  let end = R.days.length - 1;
+  for (; end > 0; end--) {
+    const rows = ccs.map((c) => R.countries[c].d[end]).filter(Boolean);
+    if (rows.length && rows.filter((r) => r[F.h] >= 23).length >= 0.75 * rows.length) break;
+  }
+  const endDay = R.days[end];
+  let pick, label;
+  if (RANK_DAYS[p]) {
+    const n = RANK_DAYS[p];
+    const idx = R.days.map((_, i) => i).filter((i) => i > end - n && i <= end);
+    pick = (c) => idx.map((i) => R.countries[c].d[i]);
+    label = n === 1 ? D.label(endDay) : `${D.label(R.days[idx[0]])} – ${D.label(endDay)}`;
+    document.querySelector('#r-period button[data-v="1d"]').textContent =
+      endDay === D.add(partsIn(Date.now(), 'Europe/Prague').date, -1) ? 'Včera' : '1 den';
+  } else {
+    const y = p === 'ytd' ? endDay.slice(0, 4) : String(+endDay.slice(0, 4) - 1);
+    const idx = R.months.map((mm, i) => [mm, i]).filter(([mm]) => mm.startsWith(y) && (p !== 'ytd' || mm <= endDay.slice(0, 7))).map(([, i]) => i);
+    pick = (c) => idx.map((i) => R.countries[c].m[i]);
+    label = p === 'ytd' ? `1. 1. – ${D.label(endDay)}` : `rok ${y}`;
+  }
+  document.querySelectorAll('#r-period button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.v === p);
+    if (b.dataset.v === 'lastyear') b.disabled = !R.months.some((mm) => mm.startsWith(String(+endDay.slice(0, 4) - 1)));
+    b.onclick = () => go('zebricek', params({ p: b.dataset.v }));
+  });
+
+  // aggregate each country over the period
+  const agg = ccs.map((c) => {
+    const s = new Array(R.fields.length).fill(null);
+    for (const row of pick(c)) {
+      if (!row) continue;
+      row.forEach((v, i) => { if (v != null) s[i] = (s[i] || 0) + v; });
+    }
+    return { cc: c, s };
+  }).filter((a) => a.s[F.h]);
+  const maxH = Math.max(0, ...agg.map((a) => a.s[F.h]));
+  agg.forEach((a) => { a.partial = a.s[F.h] < 0.95 * maxH; });
+
+  let items;
+  if (m === 'ren') {
+    items = agg.filter((a) => a.s[F.gen] > 0).map((a) => {
+      const g = Object.fromEntries(GROUPS.map(([k]) => [k, a.s[F[k]] || 0]));
+      const ren = Object.values(g).reduce((x, y) => x + y, 0);
+      return { ...a, g, ren, gen: a.s[F.gen], value: u === 'pct' ? ren / a.s[F.gen] : ren };
+    });
+  } else {
+    items = agg.filter((a) => a.s[F.exp] != null && (u === 'abs' || a.s[F.load] > 0)).map((a) => {
+      const net = a.s[F.exp] - a.s[F.imp];
+      return { ...a, net, exp: a.s[F.exp], imp: a.s[F.imp], load: a.s[F.load],
+        value: u === 'pct' ? net / a.s[F.load] : net };
+    });
+  }
+  items.sort((a, b) => b.value - a.value);
+  showNotice('#r-notice', items.length ? '' : 'Pro zvolené období nejsou k dispozici data.');
+
+  const abs = u === 'abs';
+  const twh = abs && Math.max(...items.map((i) => Math.abs(i.value)), 0) >= 1000;
+  const fmtAbs = (gwh) => (twh ? nf1.format(gwh / 1000) + ' TWh' : nf0.format(gwh) + ' GWh');
+  const fmtPct = (x) => nf1.format(x * 100) + ' %';
+  const show = (v) => (abs ? fmtAbs(v) : fmtPct(v));
+  $('#r-title').textContent = m === 'ren'
+    ? (abs ? 'Výroba z obnovitelných zdrojů' : 'Podíl obnovitelných zdrojů na výrobě')
+    : (abs ? 'Saldo přeshraničních toků' : 'Saldo toků v % spotřeby');
+  $('#r-sub').textContent = `${label} · ${items.length} zemí`;
+  $('#r-legend').innerHTML = m === 'ren'
+    ? GROUPS.map(([, n, src]) => `<span><i style="background:${SRC[src].color}"></i>${n}</span>`).join('')
+    : `<span><i style="background:${cssVar('--exp')}"></i>čistý vývoz</span><span><i style="background:${cssVar('--imp')}"></i>čistý dovoz</span>`;
+  const anyPartial = items.some((i) => i.partial);
+  $('#r-hint').textContent = (m === 'ren'
+    ? 'Podíl OZE na domácí výrobě (ne na spotřebě). OZE = slunce, vítr, voda, biomasa, geotermální, ostatní OZE a 50 % odpadu; přečerpávací elektrárny a baterie se do výroby nepočítají (jen vracejí uloženou energii). Stejná definice jako energy-charts.info.'
+    : 'Fyzické toky přes hranice za období: vývoz − dovoz. Nahoře největší vývozci, dole největší dovozci.')
+    + ' Klepnutím na zemi otevřete její výrobu.' + (anyPartial ? ' * neúplná data za období.' : '');
+
+  const el = document.getElementById('chart-rank');
+  el.style.height = `${60 + items.length * 26}px`;
+  const c = chart('chart-rank');
+  c.resize();
+  const byCc = Object.fromEntries(items.map((i) => [i.cc, i]));
+  const name = (cc) => (CC[cc]?.name || cc.toUpperCase()) + (byCc[cc]?.partial ? ' *' : '');
+  const scale = (v) => (abs ? (twh ? v / 1000 : v) : v * 100); // axis units: TWh/GWh or %
+  const tipRow = (l, r) => `<div style="display:flex;justify-content:space-between;gap:14px"><span>${l}</span><b>${r}</b></div>`;
+  let series;
+  if (m === 'ren') {
+    series = GROUPS.map(([k, n, src], gi) => ({
+      name: n, type: 'bar', stack: 'ren', color: SRC[src].color, barWidth: 16,
+      itemStyle: { borderColor: cssVar('--card'), borderWidth: 0.5 },
+      data: items.map((i) => scale(abs ? i.g[k] : i.g[k] / i.gen)),
+      label: gi === GROUPS.length - 1
+        ? { show: true, position: 'right', fontSize: 11, color: cssVar('--text'), formatter: (pp) => show(items[pp.dataIndex].value) }
+        : { show: false },
+    }));
+  } else {
+    series = [{
+      name: 'Saldo', type: 'bar', barWidth: 16,
+      data: items.map((i) => ({
+        value: scale(i.value),
+        itemStyle: { color: i.value >= 0 ? cssVar('--exp') : cssVar('--imp') },
+        label: { position: i.value >= 0 ? 'right' : 'left' },
+      })),
+      label: { show: true, fontSize: 11, color: cssVar('--text'), formatter: (pp) => (items[pp.dataIndex].value > 0 ? '+' : '') + show(items[pp.dataIndex].value) },
+    }];
+  }
+  c.setOption({
+    backgroundColor: 'transparent',
+    textStyle: baseText(),
+    animationDuration: 300,
+    grid: { left: 6, right: 64, top: 6, bottom: 6, containLabel: true },
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' }, confine: true,
+      backgroundColor: cssVar('--card'), borderColor: cssVar('--line'), textStyle: { color: cssVar('--text'), fontSize: 12 },
+      formatter: (ps) => {
+        const i = byCc[ps[0].name];
+        if (!i) return '';
+        const head = `<div style="font-weight:600;margin-bottom:4px">${esc(name(i.cc))}</div>`;
+        if (m === 'ren') {
+          return head + tipRow('OZE celkem', `${fmtPct(i.ren / i.gen)} · ${fmtEnergy(i.ren)}`)
+            + GROUPS.map(([k, n, src]) => tipRow(`<i style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;background:${SRC[src].color}"></i>${n}`, `${fmtPct(i.g[k] / i.gen)} · ${fmtEnergy(i.g[k])}`)).join('')
+            + tipRow('Výroba (bez akumulace)', fmtEnergy(i.gen));
+        }
+        return head + tipRow('Vývoz', fmtEnergy(i.exp)) + tipRow('Dovoz', fmtEnergy(i.imp))
+          + tipRow('Saldo', fmtEnergy(i.net, true))
+          + (i.load ? tipRow('v % spotřeby', (i.net > 0 ? '+' : '') + fmtPct(i.net / i.load)) : '');
+      },
+    },
+    xAxis: m === 'ren'
+      ? {
+          type: 'value', ...axisCommon(), position: 'top', max: abs ? null : 100,
+          axisLabel: { ...axisCommon().axisLabel, formatter: (v) => nf0.format(v) + (abs ? '' : ' %') },
+        }
+      : (() => {
+          // diverging bars: leave room left of the largest import for its value label
+          const vals = items.map((i) => scale(i.value));
+          const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), span = hi - lo || 1;
+          return {
+            type: 'value', ...axisCommon(), min: lo < 0 ? lo - span * 0.42 : 0, max: hi > 0 ? hi : span * 0.05,
+            axisLabel: { show: false }, splitLine: { show: false },
+          };
+        })(),
+    yAxis: {
+      type: 'category', inverse: true, data: items.map((i) => i.cc), ...axisCommon(),
+      axisTick: { show: false }, triggerEvent: true,
+      axisLabel: {
+        ...axisCommon().axisLabel, fontSize: 12, color: cssVar('--text'),
+        formatter: (cc) => (cc === homeCountry ? `{home|${name(cc)}}` : name(cc)),
+        rich: { home: { fontWeight: 700, fontSize: 12, color: cssVar('--accent') } },
+      },
+    },
+    series,
+  }, true);
+  if (!c.__wired) {
+    c.__wired = true;
+    let last = 0;
+    const open = (cc) => {
+      if (Date.now() - last < 400 || !cc || !CC[cc]?.power) return;
+      last = Date.now();
+      go('vyroba', { c: cc, p: c.__period });
+    };
+    // bars and country names...
+    c.on('click', (pp) => open(pp.componentType === 'yAxis' ? pp.value : pp.name));
+    // ...and anywhere else on the row
+    c.getZr().on('click', (e) => setTimeout(() => {
+      const pt = [e.offsetX, e.offsetY];
+      if (!c.containPixel('grid', pt)) return;
+      const [, yi] = c.convertFromPixel('grid', pt);
+      open(c.getOption().yAxis[0].data[Math.round(yi)]);
+    }, 0));
+  }
+  c.__period = p;
 }
 
 /* ------------------------------------------------------------------ init */

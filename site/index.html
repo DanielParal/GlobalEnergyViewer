@@ -17,10 +17,11 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand"><img src="icon.svg" alt="" width="24" height="24"> Energy Flows</div>
+    <div class="brand"><img src="icon.svg" alt="" width="24" height="24"> <span class="brand-name">Energy Flows</span></div>
     <nav class="tabs" aria-label="Pohledy">
       <a href="#/vyroba" data-view="vyroba">Výroba</a>
       <a href="#/toky" data-view="toky">Toky</a>
+      <a href="#/zebricek" data-view="zebricek">Žebříček</a>
     </nav>
   </header>
 
@@ -116,6 +117,37 @@
         <span><i class="arrow"></i>tok (tloušťka = objem)</span>
       </div>
       <p class="hint">Klepněte na stát nebo šipku pro detail. Mapu lze přiblížit dvěma prsty.</p>
+    </section>
+
+    <!-- ================= Žebříček ================= -->
+    <section id="view-zebricek" class="view" hidden>
+      <div class="filters">
+        <div class="seg" id="r-metric" role="group" aria-label="Ukazatel">
+          <button data-v="ren">Podíl OZE</button>
+          <button data-v="trade">Dovoz / vývoz</button>
+        </div>
+        <div class="seg" id="r-period" role="group" aria-label="Období">
+          <button data-v="1d">Včera</button>
+          <button data-v="7d">7 dní</button>
+          <button data-v="30d">30 dní</button>
+          <button data-v="ytd">Letos</button>
+          <button data-v="lastyear">Loni</button>
+        </div>
+      </div>
+      <p class="notice" id="r-notice" hidden></p>
+      <div class="card">
+        <div class="card-head">
+          <h2 id="r-title">Žebříček</h2>
+          <div class="seg mini" id="r-unit" role="group" aria-label="Jednotka">
+            <button data-v="pct">%</button>
+            <button data-v="abs">TWh</button>
+          </div>
+        </div>
+        <div class="muted" id="r-sub"></div>
+        <div class="legend static" id="r-legend"></div>
+        <div id="chart-rank" class="chart"></div>
+        <p class="hint" id="r-hint"></p>
+      </div>
     </section>
   </main>
 

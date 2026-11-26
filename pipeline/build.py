@@ -311,8 +311,117 @@ def build_power(cc: str, series: dict[str, array], tl: Timeline, out: Output) ->
         "years": [int(y) for y in years], "hourly_months": hourly_months,
         "sources": [k for k in keys if k not in ("load", NET_EXPORT)],
         "has_load": "load" in keys, "has_net_export": NET_EXPORT in keys,
-        "_monthly": monthly, "_keys": keys,
+        "_monthly": monthly, "_keys": keys, "_daily": (day_list, sums, cnt, hours),
     }
+
+
+# --------------------------------------------------------------------------
+# Rankings (all countries side by side): renewables and import / export
+# --------------------------------------------------------------------------
+REN_GROUPS = {
+    "sol": ("solar",),
+    "win": ("wind_onshore", "wind_offshore"),
+    "hyd": ("hydro_run_of_river", "hydro_reservoir"),
+    "bio": (),  # every other renewable source, weighted (biomass, geothermal, 50 % of waste, ...)
+}
+RANK_FIELDS = ["gen", *REN_GROUPS, "load", "exp", "imp", "h"]
+RANK_DAYS = 31
+
+
+def trade_by_day(nbs: dict[str, array], tl: Timeline, tz: str) -> dict[str, list]:
+    """Per local day: [gross export MWh, gross import MWh, hours with data]."""
+    days, dayidx = tl.local_days(tz)
+    arrs = list(nbs.values())
+    acc: dict[str, list] = {}
+    for i in range(tl.n):
+        e = m = 0.0
+        seen = False
+        for a in arrs:
+            v = a[i]
+            if isnum(v):
+                seen = True
+                if v >= 0:
+                    e += v
+                else:
+                    m -= v
+        if seen:
+            row = acc.setdefault(days[dayidx[i]], [0.0, 0.0, 0])
+            row[0] += e
+            row[1] += m
+            row[2] += 1
+    return acc
+
+
+def build_ranking(power_meta: dict, flows: dict, tl: Timeline, out: Output):
+    kinds = {k: kind for k, _, _, _, kind in config.SOURCES}
+    ren_w = {k: float(ren) for k, _, _, ren, _ in config.SOURCES if ren}
+    grouped = {k for keys in REN_GROUPS.values() for k in keys}
+    other_ren = [k for k in ren_w if k not in grouped]
+    per: dict[str, dict[str, list]] = {}
+    for cc in sorted(set(power_meta) | set(flows)):
+        tz = config.COUNTRY_INFO.get(cc, {}).get("tz", "UTC")
+        rows: dict[str, list] = {}
+        pm = power_meta.get(cc)
+        if pm:
+            day_list, sums, cnt, hours = pm["_daily"]
+            # generation without storage output (pumped hydro, batteries)
+            gen_keys = [k for k in sums if k not in ("load", NET_EXPORT) and k not in config.STORAGE_SOURCES
+                        and kinds.get(k, "generation") == "generation"]
+            for j, d in enumerate(day_list):
+                if not hours[j]:
+                    continue
+                gen = sum(sums[k][j] for k in gen_keys)
+                groups = [sum(ren_w[k] * sums[k][j] for k in (keys or other_ren) if k in sums)
+                          for keys in REN_GROUPS.values()]
+                load = sums["load"][j] if "load" in sums and cnt["load"][j] else None
+                rows[d] = [gen, *groups, load, None, None, hours[j]]
+        if cc in flows:
+            for d, (e, m, n) in trade_by_day(flows[cc], tl, tz).items():
+                row = rows.get(d)
+                if row is None:
+                    if pm:
+                        continue  # outside this country's production range
+                    row = rows[d] = [None] * (len(RANK_FIELDS) - 1) + [n]
+                row[-3], row[-2] = e, m
+        if not pm and rows:  # flows-only country: drop a partly downloaded first day
+            ds = sorted(rows)
+            for d in ds[:first_complete_day(ds, [rows[d][-1] for d in ds], tz)]:
+                del rows[d]
+        if rows:
+            per[cc] = rows
+
+    all_days = sorted({d for rows in per.values() for d in rows})
+    days = all_days[-RANK_DAYS:]
+    months = sorted({d[:7] for d in all_days})
+
+    def add(acc, row):
+        if acc is None:
+            return list(row)
+        return [(a if b is None else b if a is None else a + b) for a, b in zip(acc, row)]
+
+    def fmt(row, nd):
+        if row is None:
+            return None
+        return [r(v / 1000, nd) if v is not None else None for v in row[:-1]] + [row[-1]]
+
+    countries = {}
+    for cc, rows in per.items():
+        monthly: dict[str, list] = {}
+        for d, row in rows.items():
+            monthly[d[:7]] = add(monthly.get(d[:7]), row)
+        countries[cc] = {
+            "d": [fmt(rows.get(d), 2) for d in days],
+            "m": [fmt(monthly.get(m), 1) for m in months],
+        }
+    lines = ["{", '"unit":"GWh",',
+             f'"note":{dumps("gen = generation without storage output, sol/win/hyd/bio = renewable groups (bio = biomass, geothermal, other renewables, 50 % of waste), load = consumption, exp/imp = gross cross-border export/import, h = hours with data; days in local time")},',
+             f'"groups":{dumps({k: list(v) or other_ren for k, v in REN_GROUPS.items()})},',
+             f'"fields":{dumps(RANK_FIELDS)},', f'"days":{dumps(days)},', f'"months":{dumps(months)},', '"countries":{']
+    ccs = sorted(countries)
+    for n, cc in enumerate(ccs):
+        lines.append(f"{dumps(cc)}:{dumps(countries[cc])}" + ("," if n < len(ccs) - 1 else ""))
+    lines += ["}", "}"]
+    out.put("ranking.json", "\n".join(lines) + "\n")
 
 
 def build_power_monthly(meta: dict[str, dict], out: Output):
@@ -459,7 +568,8 @@ def build_countries(power_meta: dict, flows_meta: dict | None, flows: dict, out:
             "has_flows": cc in flows,
             "neighbours": neighbours,
         })
-    sources = [{"key": k, "name": n, "color": c, "renewable": ren, "kind": kind}
+    sources = [{"key": k, "name": n, "color": c, "renewable": ren, "kind": kind,
+                "storage": k in config.STORAGE_SOURCES}
                for k, n, c, ren, kind in config.SOURCES]
     known = {s["key"] for s in sources}
     for pm in power_meta.values():
@@ -504,7 +614,8 @@ def render_countries(doc: dict) -> str:
 SCHEMA = """
 CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE countries(code TEXT PRIMARY KEY, name TEXT, tz TEXT, downloaded INTEGER);
-CREATE TABLE sources(key TEXT PRIMARY KEY, name TEXT, renewable INTEGER, kind TEXT);
+-- renewable = share of the source counted as renewable (waste 0.5); storage = output of stored energy
+CREATE TABLE sources(key TEXT PRIMARY KEY, name TEXT, renewable REAL, kind TEXT, storage INTEGER);
 -- hourly mean MW (= MWh in that hour), ts = UTC hour start 'YYYY-MM-DDTHH:MMZ'
 CREATE TABLE power(country TEXT NOT NULL, ts TEXT NOT NULL, source TEXT NOT NULL, mw REAL NOT NULL,
                    PRIMARY KEY(country, ts, source)) WITHOUT ROWID;
@@ -538,8 +649,8 @@ def build_sqlite(power: dict, borders: dict, tl: Timeline, power_meta: dict, pat
     ])
     con.executemany("INSERT INTO countries VALUES (?, ?, ?, ?)", [
         (cc, i["name"], i["tz"], int(cc in config.COUNTRIES)) for cc, i in sorted(config.COUNTRY_INFO.items())])
-    con.executemany("INSERT INTO sources VALUES (?, ?, ?, ?)", [
-        (k, n, int(ren), kind) for k, n, _, ren, kind in sorted(config.SOURCES)])
+    con.executemany("INSERT INTO sources VALUES (?, ?, ?, ?, ?)", [
+        (k, n, float(ren), kind, int(k in config.STORAGE_SOURCES)) for k, n, _, ren, kind in sorted(config.SOURCES)])
 
     def power_rows():
         for cc in sorted(power):
@@ -601,6 +712,7 @@ def main(argv=None) -> int:
         if meta:
             power_meta[cc] = meta
     build_power_monthly(power_meta, out)
+    build_ranking(power_meta, flows, tl, out)
 
     borders = merge_borders(flows, tl)
     flows_meta = build_flows(borders, tl, out)

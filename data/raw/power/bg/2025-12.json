@@ -1,0 +1,15 @@
+{
+  "country": "bg",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["nuclear", "lignite", "hard_coal", "gas", "waste", "hydro_run_of_river", "hydro_reservoir", "hydro_pumped_storage", "biomass", "wind_onshore", "solar", "load"],
+  "hours": [
+    {"t": "2025-12-31T20:00Z", "v": [1765, 1174.1, 49.9, 307.4, 3.8, 85.9, 486.6, 0, 11.3, 354.2, 5.5, 5483]},
+    {"t": "2025-12-31T21:00Z", "v": [1765, 958.1, 49.8, 307.3, 3.8, 71.1, 385.1, 0, 11.7, 348.7, 24, 5410.2]},
+    {"t": "2025-12-31T22:00Z", "v": [1765, 1030.2, 49.5, 306.6, 3.8, 72.8, 172.5, 0, 11.4, 347.8, 6.1, 5328.7]},
+    {"t": "2025-12-31T23:00Z", "v": [1764.7, 1132.6, 49.5, 308.2, 3.6, 66.9, 9.1, 0, 11.3, 340.1, 49.5, 5151.4]}
+  ]
+}

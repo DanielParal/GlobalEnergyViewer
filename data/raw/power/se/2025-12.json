@@ -1,0 +1,12 @@
+{
+  "country": "se",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["nuclear", "gas", "other", "hydro_reservoir", "wind_onshore", "solar", "load"],
+  "hours": [
+    {"t": "2025-12-31T23:00Z", "v": [6776, 1.1, 789.9, 9966.1, 6432.9, 0.2, 16310.2]}
+  ]
+}

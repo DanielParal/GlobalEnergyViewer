@@ -47,11 +47,15 @@ ENDPOINTS = {
     "flows": {"path": "/v2/cbpf", "dir": "flows"},
 }
 
-# Known gaps in the API (it answers 404 "no content available"); skipped so the
-# daily run does not report them as failures.
+# Country/endpoint pairs we do not download (checked on the live API 2026-11-26).
 SKIP = {
-    "power": {"ua"},  # Ukraine: no production data, only cross-border flows
-    "flows": {"cy"},  # Cyprus: island without interconnectors
+    "power": {
+        "ua",  # Ukraine: API answers 404 "no content available"; only flows exist
+        "uk",  # API has only ~0.4 GW of Great Britain's ~30 GW generation, no nuclear, no load
+    },
+    "flows": {
+        "cy",  # Cyprus: island without interconnectors (404)
+    },
 }
 
 # --------------------------------------------------------------------------
@@ -189,7 +193,8 @@ POWER_SERIES_SKIP = {
 }
 
 # Stable order + display metadata. kind: generation | consumption | load.
-# Colours follow energy-charts.info conventions.
+# Colours follow energy-charts.info conventions. renewable = share of the
+# source counted as renewable (waste 50 %, like energy-charts.info).
 SOURCES = [
     # key, Czech name, colour, renewable, kind
     ("nuclear", "Jádro", "#d62728", False, "generation"),
@@ -200,7 +205,7 @@ SOURCES = [
     ("peat", "Rašelina", "#a07850", False, "generation"),
     ("gas", "Plyn", "#f28e2b", False, "generation"),
     ("oil", "Ropa", "#7f3f00", False, "generation"),
-    ("waste", "Odpad", "#9c8c6c", False, "generation"),
+    ("waste", "Odpad", "#9c8c6c", 0.5, "generation"),  # half counted as renewable (biogenic)
     ("other", "Ostatní", "#a6a6a6", False, "generation"),
     ("hydro_run_of_river", "Průtočné vodní", "#1f4e9e", True, "generation"),
     ("hydro_reservoir", "Akumulační vodní", "#2f6fbf", True, "generation"),
@@ -217,5 +222,9 @@ SOURCES = [
     ("load", "Zatížení (spotřeba)", "#000000", False, "load"),
 ]
 SOURCE_ORDER = [s[0] for s in SOURCES]
+
+# Storage output only returns energy stored earlier, so it is left out of
+# the generation total when computing the renewable share (as energy-charts.info does).
+STORAGE_SOURCES = {"hydro_pumped_storage", "battery"}
 
 ATTRIBUTION = "Data: energy-charts.info (Fraunhofer ISE), původně ENTSO-E · licence CC BY 4.0"

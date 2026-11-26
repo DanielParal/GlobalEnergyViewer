@@ -7,6 +7,7 @@
   "license": "CC BY 4.0, attribution: energy-charts.info",
   "series": ["lignite", "gas", "hydro_reservoir", "hydro_pumped_storage", "wind_onshore", "solar", "load"],
   "hours": [
+    {"t": "2025-12-31T20:00Z", "v": [412, 3577, 274, 35, 2076, 0, 6451]},
     {"t": "2025-12-31T21:00Z", "v": [415, 3742, 157, 23, 2194, 0, 5771]},
     {"t": "2025-12-31T22:00Z", "v": [405, 3665, 87, 44, 2166, 0, 5216]},
     {"t": "2025-12-31T23:00Z", "v": [390, 3851, 10, 0, 2240, 0, 5049]}
