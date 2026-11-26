@@ -76,10 +76,11 @@ body[data-area="eu"] .only-world, body[data-area="world"] .only-eu { display: no
   .top { flex-wrap: wrap; row-gap: 6px; padding: calc(env(safe-area-inset-top) + 6px) 8px 6px; }
   .brand-name { font-size: 15px; }
   .area { margin-left: auto; }
-  .area a { padding: 4px 11px; font-size: 13.5px; }
+  .area a { padding: 7px 13px; font-size: 13.5px; }
   .tabs { order: 3; width: 100%; margin-left: 0; }
-  .tabs a { flex: 1; text-align: center; padding: 6px 4px; font-size: 14.5px; }
+  .tabs a { flex: 1; text-align: center; padding: 9px 4px; font-size: 14.5px; }
 }
+
 .seg.mini { display: inline-flex; padding: 2px; border-radius: 8px; }
 .seg.mini button { flex: none; padding: 4px 10px; min-height: 30px; font-size: 13px; }
 .legend.static span { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; margin-right: 10px; }
@@ -223,12 +224,16 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
 .card .more { display: inline-block; margin-top: 4px; font-size: 14px; font-weight: 600; text-decoration: none; }
 .picks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .filters.picks { margin-bottom: 10px; }
+/* the select covers the whole box, so the whole box opens it on a phone */
 .pick {
-  display: flex; flex-direction: column; gap: 2px; background: var(--card); border: 1px solid var(--line);
-  border-radius: 10px; padding: 6px 10px 8px; min-width: 0;
+  position: relative; display: block; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; min-width: 0;
 }
-.pick .lbl { color: var(--muted); font-size: 12px; }
-.pick select { border: 0; padding: 0; font-weight: 650; font-size: 15px; background: transparent; width: 100%; min-width: 0; }
+.pick .lbl { position: absolute; left: 11px; top: 6px; color: var(--muted); font-size: 12px; pointer-events: none; }
+.pick select {
+  display: block; width: 100%; min-width: 0; min-height: 54px; padding: 22px 10px 7px; border: 0; border-radius: 10px;
+  font-weight: 650; font-size: 15px; background: transparent; cursor: pointer;
+}
 .chart.map.world { height: auto; aspect-ratio: 2; min-height: 180px; max-height: 70vh; }
 .scale { margin: 8px 2px 0; font-size: 12.5px; color: var(--muted); }
 .scale .bar { height: 10px; border-radius: 5px; border: 1px solid var(--line); }
@@ -262,3 +267,13 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
   color: var(--muted); font-size: 12.5px; display: flex; flex-direction: column; gap: 2px;
 }
 .loading { opacity: .55; transition: opacity .2s; }
+
+/* touch: comfortable tap targets (~40 px) */
+@media (pointer: coarse) {
+  .legend button { min-height: 36px; padding: 4px 10px 4px 8px; }
+  .seg.mini button { min-height: 38px; padding: 4px 12px; }
+  .switch { min-height: 42px; padding: 0 2px 4px; }
+  .switch input { width: 22px; height: 22px; }
+  .hourrow input[type=range] { height: 36px; }
+  .card .more { display: block; padding: 12px 0 4px; }
+}

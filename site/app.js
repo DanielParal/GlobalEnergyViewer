@@ -116,9 +116,11 @@ function go(view, params, replace = false) {
   else route();
 }
 let currentView = null;
+const LAST_KEY = 'energy-flows:last';
 function route() {
   const { view, q } = parseHash();
   const v = VIEWS[view];
+  try { localStorage.setItem(LAST_KEY, location.hash || `#/${view}`); } catch (e) { /* private mode */ }
   if (currentView && currentView !== view) window.scrollTo(0, 0); // new view starts at the top
   currentView = view;
   lastHash[v.area] = location.hash || `#/${view}`;
@@ -1113,6 +1115,7 @@ async function renderRanking(q) {
     xAxis: m === 'ren'
       ? {
           type: 'value', ...axisCommon(), position: 'top', max: abs ? null : 100,
+          interval: abs ? null : (el.clientWidth < 560 ? 50 : 25), splitNumber: 3,
           axisLabel: { ...axisCommon().axisLabel, formatter: (v) => nf0.format(v) + (abs ? '' : ' %') },
         }
       : (() => {
@@ -1185,6 +1188,12 @@ async function init() {
     if (det.open && !det.contains(e.target)) det.open = false;
   });
   window.addEventListener('hashchange', route);
+  // opened without a view (home-screen icon): continue where the user left off
+  if (!location.hash) {
+    let last = null;
+    try { last = localStorage.getItem(LAST_KEY); } catch (e) { /* private mode */ }
+    if (last && /^#\/[a-z/]+(\?.*)?$/.test(last)) history.replaceState(null, '', last);
+  }
   route();
 }
 document.addEventListener('DOMContentLoaded', init);

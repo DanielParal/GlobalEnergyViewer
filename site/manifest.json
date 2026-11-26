@@ -3,7 +3,7 @@
   "short_name": "Energy Flows",
   "description": "Výroba elektřiny podle zdrojů a přeshraniční toky v Evropě, mix zdrojů a emise ve světě",
   "lang": "cs",
-  "start_url": "./#/vyroba",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
