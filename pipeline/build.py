@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build web summaries (site/data/) and the SQLite database (build/) from the
-raw hourly files in data/raw/. No network. Deterministic: the same input gives
+raw hourly files in data/raw/ (Europe) and data/raw/world/ (Ember, see
+build_world.py). No network. Deterministic: the same input gives
 byte-identical output.
 
     python pipeline/build.py              # summaries + SQLite
@@ -21,6 +22,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import build_world  # noqa: E402
 import config  # noqa: E402
 from common import HOUR, UTC, clean_number, fmt_hour, read_raw, series_sort_key, write_if_changed  # noqa: E402
 
@@ -553,7 +555,8 @@ def build_flows(borders: dict[tuple[str, str], array], tl: Timeline, out: Output
 # --------------------------------------------------------------------------
 # countries.json
 # --------------------------------------------------------------------------
-def build_countries(power_meta: dict, flows_meta: dict | None, flows: dict, out: Output):
+def build_countries(power_meta: dict, flows_meta: dict | None, flows: dict, out: Output,
+                    world_codes: dict[str, str]):
     border_ccs = {c for pair in (flows_meta or {}).get("borders", []) for c in pair}
     codes = [c for c in config.COUNTRIES] + sorted((set(power_meta) | border_ccs) - set(config.COUNTRIES))
     countries = []
@@ -567,6 +570,7 @@ def build_countries(power_meta: dict, flows_meta: dict | None, flows: dict, out:
             "power": None if pm is None else {k: v for k, v in pm.items() if not k.startswith("_")},
             "has_flows": cc in flows,
             "neighbours": neighbours,
+            "world": world_codes.get(cc),
         })
     sources = [{"key": k, "name": n, "color": c, "renewable": ren, "kind": kind,
                 "storage": k in config.STORAGE_SOURCES}
@@ -635,7 +639,7 @@ CREATE VIEW net_export_hourly AS
 """
 
 
-def build_sqlite(power: dict, borders: dict, tl: Timeline, power_meta: dict, path: Path):
+def build_sqlite(power: dict, borders: dict, tl: Timeline, power_meta: dict, path: Path, world: dict | None):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".sqlite.tmp")
     if tmp.exists():
@@ -674,6 +678,8 @@ def build_sqlite(power: dict, borders: dict, tl: Timeline, power_meta: dict, pat
                 rows.append((a, b, tl.ts(i), round(v, 1)) if v >= 0 else (b, a, tl.ts(i), round(-v, 1) + 0.0))
     rows.sort()
     con.executemany("INSERT INTO flows VALUES (?, ?, ?, ?)", rows)
+    if world:
+        build_world.to_sqlite(con, world)
     con.commit()
     con.close()
     tmp.replace(path)
@@ -716,12 +722,16 @@ def main(argv=None) -> int:
 
     borders = merge_borders(flows, tl)
     flows_meta = build_flows(borders, tl, out)
-    build_countries(power_meta, flows_meta, flows, out)
+    world = build_world.build(out, set(power_meta))
+    # Europe code (iso2, 'uk' for GB) -> world entity, for links between the two parts of the site
+    world_codes = {("uk" if e["iso2"] == "GB" else e["iso2"].lower()): e["code"]
+                   for e in (world or {}).get("entities", []) if e.get("iso2")}
+    build_countries(power_meta, flows_meta, flows, out, world_codes)
     removed = out.prune()
     log.info("site/data: %d files, %d changed, %d removed", len(out.written), out.changed, removed)
 
     if not args.no_sqlite:
-        build_sqlite(power, borders, tl, power_meta, config.SQLITE_PATH)
+        build_sqlite(power, borders, tl, power_meta, config.SQLITE_PATH, world)
         log.info("sqlite: %s (%.1f MB)", config.SQLITE_PATH.relative_to(config.ROOT),
                  config.SQLITE_PATH.stat().st_size / 1e6)
     return 0

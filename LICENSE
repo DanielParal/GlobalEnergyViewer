@@ -23,6 +23,7 @@ SOFTWARE.
 ---------------------------------------------------------------------------
 The MIT license covers the source code only. The data in data/raw/ and
 site/data/ is derived from energy-charts.info (Fraunhofer ISE), originally
-ENTSO-E, and is licensed under CC BY 4.0
-(https://creativecommons.org/licenses/by/4.0/). site/europe.geojson is based
-on Natural Earth (public domain).
+ENTSO-E (Europe), and from Ember (data/raw/world/, site/data/world/), both
+licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+site/europe.geojson and site/world.geojson are based on Natural Earth
+(public domain).

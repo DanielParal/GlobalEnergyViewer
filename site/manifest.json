@@ -1,7 +1,7 @@
 {
-  "name": "Energy Flows – elektřina v Evropě",
+  "name": "Energy Flows – elektřina v Evropě a ve světě",
   "short_name": "Energy Flows",
-  "description": "Výroba elektřiny podle zdrojů a přeshraniční toky v Evropě",
+  "description": "Výroba elektřiny podle zdrojů a přeshraniční toky v Evropě, mix zdrojů a emise ve světě",
   "lang": "cs",
   "start_url": "./#/vyroba",
   "scope": "./",

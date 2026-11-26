@@ -228,3 +228,82 @@ SOURCE_ORDER = [s[0] for s in SOURCES]
 STORAGE_SOURCES = {"hydro_pumped_storage", "battery"}
 
 ATTRIBUTION = "Data: energy-charts.info (Fraunhofer ISE), původně ENTSO-E · licence CC BY 4.0"
+
+
+# ==========================================================================
+# World: yearly and monthly data from Ember (fetch_world.py, build_world.py)
+# ==========================================================================
+# Free API key: https://ember-energy.org/data/api/ - read from the environment
+# variable EMBER_API_KEY or from a git-ignored .env file in the repo root.
+EMBER_API_BASE = "https://api.ember-energy.org/v1"
+EMBER_KEY_ENV = "EMBER_API_KEY"
+EMBER_HTTP_TIMEOUT = 300           # seconds; the full monthly dataset is ~40 MB
+WORLD_RAW_DIR = RAW_DIR / "world"
+WORLD_START_YEAR = 2000
+# Static metadata (Czech names, ISO 3166 alpha-2, region) made by tools/make_world.py
+WORLD_ENTITIES_PATH = ROOT / "pipeline" / "world_entities.json"
+WORLD_ATTRIBUTION = "Data: Ember (ember-energy.org) · licence CC BY 4.0"
+
+# Ember generation series -> our key. Aggregated series (Total generation,
+# Renewables, Fossil, Clean, ...) are sums of these and are not stored.
+EMBER_SERIES = {
+    "Bioenergy": "bioenergy",
+    "Coal": "coal",
+    "Gas": "gas",
+    "Hydro": "hydro",
+    "Nuclear": "nuclear",
+    "Other fossil": "other_fossil",
+    "Other renewables": "other_renewables",
+    "Solar": "solar",
+    "Wind": "wind",
+    "Net imports": "net_imports",
+}
+# Field order in raw files and web summaries
+WORLD_FIELDS = ["coal", "gas", "other_fossil", "nuclear", "hydro", "bioenergy", "other_renewables",
+                "wind", "solar", "net_imports", "demand", "ci", "kwh_pc"]
+WORLD_UNITS = {"ci": "gCO2/kWh", "kwh_pc": "kWh per person", "*": "TWh"}
+
+WORLD_SOURCES = [
+    # key, Czech name, colour, renewable, low-carbon. Stack order = this order; colours follow the
+    # usual energy conventions and pass the colour-blind check for neighbouring stack segments.
+    ("coal", "Uhlí", "#7b4f2c", False, False),
+    ("gas", "Plyn", "#f28e2b", False, False),
+    ("other_fossil", "Ropa a ostatní fosilní", "#8c8c8c", False, False),
+    ("nuclear", "Jádro", "#d62728", False, True),
+    ("hydro", "Voda", "#2f6fbf", True, True),
+    ("bioenergy", "Biomasa", "#2ca02c", True, True),
+    ("other_renewables", "Geotermální a ostatní OZE", "#9467bd", True, True),
+    ("wind", "Vítr", "#5aa9e6", True, True),
+    ("solar", "Slunce", "#e0b000", True, True),
+]
+
+# Ember aggregate entities (no ISO code) -> our code and Czech name.
+# `region` = the key of the region the aggregate stands for in WORLD_REGIONS.
+WORLD_AGGREGATES = {
+    "World": ("world", "Svět"),
+    "EU": ("eu", "Evropská unie"),
+    "Europe": ("europe", "Evropa"),
+    "Asia": ("asia", "Asie"),
+    "Middle East": ("middle_east", "Blízký východ"),
+    "Africa": ("africa", "Afrika"),
+    "North America": ("north_america", "Severní Amerika"),
+    "Latin America and Caribbean": ("latin_america", "Latinská Amerika a Karibik"),
+    "Oceania": ("oceania", "Oceánie"),
+    "MENA": ("mena", "Blízký východ a sev. Afrika"),
+    "G7": ("g7", "G7"),
+    "G20": ("g20", "G20"),
+    "OECD": ("oecd", "OECD"),
+    "ASEAN": ("asean", "ASEAN"),
+    "AU": ("au", "Africká unie"),
+}
+# Regions used to group countries, with Ember's membership (checked against the
+# sums of Ember's regional aggregates, see tools/make_world.py).
+WORLD_REGIONS = [
+    ("europe", "Evropa"),
+    ("asia", "Asie"),
+    ("middle_east", "Blízký východ"),
+    ("africa", "Afrika"),
+    ("north_america", "Severní Amerika"),
+    ("latin_america", "Latinská Amerika"),
+    ("oceania", "Oceánie"),
+]

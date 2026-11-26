@@ -1,8 +1,10 @@
 'use strict';
 /* Energy Flows – static client. Reads the pre-computed JSON in data/ and
- * renders two views with Apache ECharts:
+ * renders the views with Apache ECharts. Europe (energy-charts.info, hourly):
  *   #/vyroba?c=cz,de&p=30d|7d|ytd|lastyear&od=YYYY-MM[-DD]&do=…&g=hour|day|month|year&z=<sources>&s=<sort>
  *   #/toky?p=day|7d|30d|ytd|lastyear&d=YYYY-MM-DD&h=<hour index>
+ *   #/zebricek?m=ren|trade&p=…&u=pct|abs
+ * World (Ember, monthly / yearly): #/svet/vyroba, #/svet/mapa, #/svet/zebricek – see world.js.
  * The URL is the single source of truth: controls only change the hash. */
 
 const DATA = 'data/';
@@ -88,10 +90,17 @@ const fmtVal = (v, unit, signed) => (unit === 'MW' ? fmtPower(v, signed) : fmtEn
 const pct = (x) => (x == null || Number.isNaN(x) ? '–' : nf1.format(x * 100) + ' %');
 
 /* ---------------------------------------------------------------- router */
+// view -> {area, render, notice}; world.js adds the 'svet/…' views
+const VIEWS = {
+  vyroba: { area: 'eu', notice: '#p-notice', render: (q) => renderProduction(q) },
+  toky: { area: 'eu', notice: '#m-notice', render: (q) => renderFlows(q) },
+  zebricek: { area: 'eu', notice: '#r-notice', render: (q) => renderRanking(q) },
+};
+const lastHash = { eu: '#/vyroba', world: '#/svet/vyroba' }; // Evropa | Svět switch returns here
 function parseHash() {
   const h = location.hash.replace(/^#\/?/, '');
   const [view, qs] = h.split('?');
-  return { view: ['toky', 'zebricek'].includes(view) ? view : 'vyroba', q: new URLSearchParams(qs || '') };
+  return { view: VIEWS[view] ? view : 'vyroba', q: new URLSearchParams(qs || '') };
 }
 function hashFor(view, params) {
   const qs = Object.entries(params)
@@ -106,15 +115,23 @@ function go(view, params, replace = false) {
   else if (location.hash !== h) location.hash = h;
   else route();
 }
+let currentView = null;
 function route() {
   const { view, q } = parseHash();
-  document.querySelectorAll('.view').forEach((s) => { s.hidden = s.id !== `view-${view}`; });
+  const v = VIEWS[view];
+  if (currentView && currentView !== view) window.scrollTo(0, 0); // new view starts at the top
+  currentView = view;
+  lastHash[v.area] = location.hash || `#/${view}`;
+  document.body.dataset.area = v.area;
+  document.querySelectorAll('.view').forEach((s) => { s.hidden = s.id !== `view-${view.replace('/', '-')}`; });
   document.querySelectorAll('.tabs a').forEach((a) => a.classList.toggle('active', a.dataset.view === view));
+  document.querySelectorAll('.area a').forEach((a) => {
+    a.classList.toggle('active', a.dataset.area === v.area);
+    if (a.dataset.area !== v.area) a.href = lastHash[a.dataset.area];
+  });
   if (view !== 'toky') stopPlay();
   closeSheet();
-  const [render, notice] = { toky: [renderFlows, '#m-notice'], zebricek: [renderRanking, '#r-notice'] }[view]
-    || [renderProduction, '#p-notice'];
-  render(q).catch((e) => { console.error(e); showNotice(notice, 'Chyba při načítání dat: ' + e.message); });
+  v.render(q).catch((e) => { console.error(e); showNotice(v.notice, 'Chyba při načítání dat: ' + e.message); });
 }
 function showNotice(sel, text) { const n = $(sel); n.hidden = !text; n.textContent = text || ''; }
 
@@ -297,6 +314,10 @@ async function renderProduction(q) {
   drawMainChart(g, unit, x, table, present.filter(on));
   const tot = totals(table, unit);
   drawKpis(tot, st);
+  const wl = $('#p-world-link');
+  const wc = st.cs.length === 1 && CC[st.cs[0]].world;
+  wl.hidden = !wc;
+  if (wc) wl.href = hashFor('svet/vyroba', { e: wc, g: 'year', p: 'all' });
   drawDonut(tot, present.filter(on));
   await drawComparison(st, g, unit, x, tables, present);
 }
@@ -908,7 +929,8 @@ async function openCountrySheet(code) {
       <div class="kpi"><div class="k">Podíl OZE</div><div class="v">${pw ? pct(pw.renShare) : '–'}</div></div>
     </div>
     ${mine.length ? `<table><thead><tr><th>Soused</th><th>Vývoz</th><th>Dovoz</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="muted">Žádné toky.</p>'}
-    ${link ? `<a class="btn" href="${link}">Výroba v pohledu Výroba →</a>` : ''}`);
+    ${link ? `<a class="btn" href="${link}">Výroba v pohledu Výroba →</a>` : ''}
+    ${CC[code]?.world ? `<a class="btn ghost" href="${hashFor('svet/vyroba', { e: CC[code].world, g: 'year', p: 'all' })}">Vývoj od roku 2000 (Ember) →</a>` : ''}`);
 }
 
 function openBorderSheet(br) {
@@ -1152,6 +1174,10 @@ async function init() {
       .toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
   if (!META.flows) document.querySelector('.tabs a[data-view="toky"]').hidden = true;
+  document.addEventListener('click', (e) => {
+    const det = $('#w-entities');
+    if (det && det.open && !det.contains(e.target)) det.open = false;
+  });
   $('#sheet-close').onclick = closeSheet;
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
   document.addEventListener('click', (e) => {

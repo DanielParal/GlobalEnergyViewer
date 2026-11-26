@@ -70,6 +70,20 @@ jobs:
         if: steps.fetch.outcome == 'failure'
         run: echo "::warning::Some downloads failed - see the Fetch step summary. Continuing with the data we have."
 
+      - name: Fetch world (Ember)
+        # 6 bulk requests, ~30 MB, ~20 s. Needs the repository secret EMBER_API_KEY
+        # (free key: https://ember-energy.org/data/api/); skipped without it.
+        continue-on-error: true
+        env:
+          EMBER_API_KEY: ${{ secrets.EMBER_API_KEY }}
+        run: |
+          if [ -z "$EMBER_API_KEY" ]; then
+            echo "::warning::Secret EMBER_API_KEY is not set - world data not updated."
+            echo "### ⚠️ World data skipped - add the EMBER_API_KEY secret" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python pipeline/fetch_world.py
+
       - name: Build
         run: python pipeline/build.py
 
@@ -95,7 +109,7 @@ jobs:
           gzip -9 -k -f build/energy.sqlite
           gh release view latest >/dev/null 2>&1 || \
             gh release create latest --title "Latest data (SQLite)" \
-              --notes "build/energy.sqlite rebuilt daily from data/raw. Data: energy-charts.info (Fraunhofer ISE), originally ENTSO-E, CC BY 4.0."
+              --notes "build/energy.sqlite rebuilt daily from data/raw. Data: energy-charts.info (Fraunhofer ISE), originally ENTSO-E, CC BY 4.0; world tables: Ember, CC BY 4.0."
           gh release upload latest build/energy.sqlite.gz --clobber
 
       - uses: actions/configure-pages@v5

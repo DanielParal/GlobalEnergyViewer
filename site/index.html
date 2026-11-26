@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Energy Flows – elektřina v Evropě</title>
-  <meta name="description" content="Výroba elektřiny podle zdrojů a přeshraniční toky v Evropě">
+  <title>Energy Flows – elektřina v Evropě a ve světě</title>
+  <meta name="description" content="Výroba elektřiny podle zdrojů a přeshraniční toky v Evropě, mix zdrojů a emise ve světě">
   <meta name="theme-color" content="#163a6e">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -14,14 +14,23 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="world.js" defer></script>
 </head>
-<body>
+<body data-area="eu">
   <header class="top">
     <div class="brand"><img src="icon.svg" alt="" width="24" height="24"> <span class="brand-name">Energy Flows</span></div>
+    <nav class="area" aria-label="Oblast">
+      <a href="#/vyroba" data-area="eu">Evropa</a>
+      <a href="#/svet/vyroba" data-area="world">Svět</a>
+    </nav>
     <nav class="tabs" aria-label="Pohledy">
-      <a href="#/vyroba" data-view="vyroba">Výroba</a>
-      <a href="#/toky" data-view="toky">Toky</a>
-      <a href="#/zebricek" data-view="zebricek">Žebříček</a>
+      <a href="#/vyroba" data-view="vyroba" class="only-eu">Výroba</a>
+      <a href="#/toky" data-view="toky" class="only-eu">Toky</a>
+      <a href="#/zebricek" data-view="zebricek" class="only-eu">Žebříček</a>
+      <a href="#/svet/vyroba" data-view="svet/vyroba" class="only-world">Výroba</a>
+      <a href="#/svet/mapa" data-view="svet/mapa" class="only-world">Mapa</a>
+      <a href="#/svet/zebricek" data-view="svet/zebricek" class="only-world">Žebříček</a>
+      <a href="#/svet/srovnani" data-view="svet/srovnani" class="only-world">Srovnání</a>
     </nav>
   </header>
 
@@ -73,6 +82,7 @@
         <div class="card-head"><h2>Souhrn za období</h2><span class="muted" id="p-range-label"></span></div>
         <div class="kpis" id="p-kpis"></div>
         <div id="chart-donut" class="chart donut"></div>
+        <a class="more" id="p-world-link" href="#/svet/vyroba" hidden>Vývoj od roku 2000 (roční data Ember) →</a>
       </div>
 
       <div class="card" id="cmp-card" hidden>
@@ -149,6 +159,120 @@
         <p class="hint" id="r-hint"></p>
       </div>
     </section>
+
+    <!-- ================= Svět – Výroba ================= -->
+    <section id="view-svet-vyroba" class="view" hidden>
+      <div class="filters">
+        <details class="drop" id="w-entities">
+          <summary><span class="lbl">Země</span> <b id="w-entities-label">–</b></summary>
+          <div class="drop-body">
+            <input type="search" id="w-search" class="search" placeholder="Hledat zemi nebo region…" autocomplete="off" aria-label="Hledat">
+            <label class="switch"><input type="checkbox" id="w-multi"> Porovnat více zemí</label>
+            <div id="w-entities-list" class="groups"></div>
+          </div>
+        </details>
+        <div class="seg" id="w-period" role="group" aria-label="Období">
+          <button data-v="1y">12 měsíců</button>
+          <button data-v="3y">3 roky</button>
+          <button data-v="10y">10 let</button>
+          <button data-v="all">Vše</button>
+        </div>
+        <div class="seg" id="w-step" role="group" aria-label="Krok">
+          <button data-v="month">Měsíc</button>
+          <button data-v="year">Rok</button>
+        </div>
+      </div>
+      <p class="notice" id="w-notice" hidden></p>
+      <div class="card">
+        <div class="card-head">
+          <h2 id="w-title">Výroba</h2>
+          <div class="seg mini" id="w-unit" role="group" aria-label="Jednotka">
+            <button data-v="abs">TWh</button>
+            <button data-v="pct">%</button>
+          </div>
+        </div>
+        <div class="muted" id="w-sub"></div>
+        <div class="legend" id="w-legend" aria-label="Zdroje (klepnutím vypnete / zapnete)"></div>
+        <div id="chart-w-main" class="chart"></div>
+        <p class="hint" id="w-hint"></p>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Souhrn za období</h2><span class="muted" id="w-range-label"></span></div>
+        <div class="kpis six" id="w-kpis"></div>
+        <div id="chart-w-donut" class="chart donut"></div>
+        <a class="more" id="w-eu-link" href="#/vyroba" hidden>Hodinová data a toky v části Evropa →</a>
+      </div>
+      <div class="card" id="w-cmp-card" hidden>
+        <div class="card-head">
+          <h2>Porovnání</h2>
+          <label class="muted">řadit podle <select id="w-cmp-sort"></select></label>
+        </div>
+        <div id="chart-w-cmp" class="chart cmp"></div>
+      </div>
+    </section>
+
+    <!-- ================= Svět – Mapa ================= -->
+    <section id="view-svet-mapa" class="view" hidden>
+      <div class="filters picks">
+        <label class="pick"><span class="lbl">Ukazatel</span> <select id="wm-metric"></select></label>
+        <label class="pick"><span class="lbl">Období</span> <select id="wm-year"></select></label>
+      </div>
+      <p class="notice" id="wm-notice" hidden></p>
+      <div class="map-wrap">
+        <div id="wmap" class="chart map world"></div>
+        <div class="map-caption" id="wm-caption"></div>
+      </div>
+      <div class="scale" id="wm-legend"></div>
+      <p class="hint" id="wm-hint"></p>
+    </section>
+
+    <!-- ================= Svět – Žebříček ================= -->
+    <section id="view-svet-zebricek" class="view" hidden>
+      <div class="filters">
+        <div class="picks">
+          <label class="pick"><span class="lbl">Ukazatel</span> <select id="wr-metric"></select></label>
+          <label class="pick"><span class="lbl">Období</span> <select id="wr-year"></select></label>
+        </div>
+        <div class="seg" id="wr-region" role="group" aria-label="Výběr zemí"></div>
+      </div>
+      <p class="notice" id="wr-notice" hidden></p>
+      <div class="card">
+        <div class="card-head">
+          <h2 id="wr-title">Žebříček</h2>
+          <div class="seg mini" id="wr-unit" role="group" aria-label="Jednotka">
+            <button data-v="pct">%</button>
+            <button data-v="abs">TWh</button>
+          </div>
+        </div>
+        <div class="muted" id="wr-sub"></div>
+        <div class="legend static" id="wr-legend"></div>
+        <div id="chart-w-rank" class="chart"></div>
+        <p class="hint" id="wr-hint"></p>
+      </div>
+    </section>
+
+    <!-- ================= Svět – Srovnání ================= -->
+    <section id="view-svet-srovnani" class="view" hidden>
+      <div class="filters">
+        <div class="chips picks-row" id="wc-entities" role="group" aria-label="Porovnávané celky"></div>
+        <div class="seg" id="wc-step" role="group" aria-label="Krok">
+          <button data-v="year">Po letech (od 2000)</button>
+          <button data-v="month">Po měsících (5 let)</button>
+        </div>
+      </div>
+      <p class="notice" id="wc-notice" hidden></p>
+      <div class="card">
+        <div class="card-head"><h2>Souhrn</h2><span class="muted" id="wc-period"></span></div>
+        <div class="table-wrap"><table class="cmp-table" id="wc-table"></table></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Mix zdrojů</h2><span class="muted" id="wc-mix-period"></span></div>
+        <div class="legend static" id="wc-mix-legend"></div>
+        <div id="chart-wc-mix" class="chart cmp"></div>
+      </div>
+      <div class="trends" id="wc-trends"></div>
+      <p class="hint" id="wc-hint"></p>
+    </section>
   </main>
 
   <!-- bottom sheet (detail státu / hranice) -->
@@ -160,10 +284,14 @@
   </div>
 
   <footer class="foot">
-    <span id="attribution">Data: <a href="https://energy-charts.info" rel="noopener">energy-charts.info</a> (Fraunhofer ISE), původně ENTSO-E ·
+    <span class="only-eu">Data: <a href="https://energy-charts.info" rel="noopener">energy-charts.info</a> (Fraunhofer ISE), původně ENTSO-E ·
       licence <a href="https://creativecommons.org/licenses/by/4.0/deed.cs" rel="noopener">CC BY 4.0</a>;
       upraveno (čtvrthodinové hodnoty zprůměrovány na hodiny a sečteny po dnech a měsících)</span>
-    <span id="updated"></span>
+    <span class="only-world">Data: <a href="https://ember-energy.org" rel="noopener">Ember</a> – roční a měsíční data o elektřině ·
+      licence <a href="https://creativecommons.org/licenses/by/4.0/deed.cs" rel="noopener">CC BY 4.0</a>;
+      upraveno (součty za období a regiony, podíly a průměry dopočítány). Mapa: Natural Earth.</span>
+    <span id="updated" class="only-eu"></span>
+    <span id="updated-world" class="only-world"></span>
   </footer>
 </body>
 </html>

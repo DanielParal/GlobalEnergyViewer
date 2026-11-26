@@ -3,13 +3,14 @@ VENV := .venv
 PY   := $(if $(wildcard $(VENV)/bin/python),$(VENV)/bin/python,python3)
 PORT ?= 8000
 
-.PHONY: setup fetch fetch-all backfill build build-fast serve db clean help
+.PHONY: setup fetch fetch-all fetch-world backfill build build-fast serve db clean help
 
 help:
 	@echo "make setup       create .venv and install requirements"
 	@echo "make fetch       quick debug fetch: CZ, last 3 days (~1 min)"
 	@echo "make fetch-all   all countries, last 5 days (like the daily Action)"
 	@echo "make backfill FROM=2024-01-01 [TO=2024-12-31]   history, 3-month requests"
+	@echo "make fetch-world world data from Ember (needs EMBER_API_KEY in env or .env)"
 	@echo "make build       raw -> site/data + build/energy.sqlite"
 	@echo "make build-fast  raw -> site/data only (no SQLite)"
 	@echo "make serve       http://localhost:$(PORT) (also reachable from your phone on the LAN)"
@@ -24,6 +25,9 @@ fetch:
 
 fetch-all:
 	$(PY) pipeline/fetch.py
+
+fetch-world:
+	$(PY) pipeline/fetch_world.py
 
 backfill:
 	@test -n "$(FROM)" || (echo "usage: make backfill FROM=YYYY-MM-DD [TO=YYYY-MM-DD]"; exit 2)
