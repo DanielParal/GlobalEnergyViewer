@@ -1,0 +1,13 @@
+{
+  "country": "lt",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["gas", "waste", "other", "hydro_run_of_river", "hydro_pumped_storage", "battery", "biomass", "wind_onshore", "solar", "hydro_pumped_storage_consumption", "battery_consumption", "load"],
+  "hours": [
+    {"t": "2025-12-31T22:00Z", "v": [55.9, 107.4, 54.5, 50.3, 40.8, 13.8, 21.1, 655.5, 0, 0, 0, 1498.3]},
+    {"t": "2025-12-31T23:00Z", "v": [33.3, 106, 46.4, 95.2, 203, 3.3, 21.1, 907.5, 0, 0, 0, 1458]}
+  ]
+}

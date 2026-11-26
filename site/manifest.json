@@ -1,0 +1,17 @@
+{
+  "name": "Energy Flows – elektřina v Evropě",
+  "short_name": "Energy Flows",
+  "description": "Výroba elektřiny podle zdrojů a přeshraniční toky v Evropě",
+  "lang": "cs",
+  "start_url": "./#/vyroba",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f7f9",
+  "theme_color": "#163a6e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

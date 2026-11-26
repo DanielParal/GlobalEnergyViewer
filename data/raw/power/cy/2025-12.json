@@ -1,0 +1,14 @@
+{
+  "country": "cy",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["oil", "biomass", "wind_onshore", "solar", "load"],
+  "hours": [
+    {"t": "2025-12-31T21:00Z", "v": [507.7, 6.2, 52.9, 0, 590.2]},
+    {"t": "2025-12-31T22:00Z", "v": [453.1, 6.2, 75.5, 0, 551.4]},
+    {"t": "2025-12-31T23:00Z", "v": [450.4, 6.2, 58.5, 0, 535.6]}
+  ]
+}

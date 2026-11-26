@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Energy Flows – elektřina v Evropě</title>
+  <meta name="description" content="Výroba elektřiny podle zdrojů a přeshraniční toky v Evropě">
+  <meta name="theme-color" content="#163a6e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Energy Flows">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><img src="icon.svg" alt="" width="24" height="24"> Energy Flows</div>
+    <nav class="tabs" aria-label="Pohledy">
+      <a href="#/vyroba" data-view="vyroba">Výroba</a>
+      <a href="#/toky" data-view="toky">Toky</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= Výroba ================= -->
+    <section id="view-vyroba" class="view" hidden>
+      <div class="filters">
+        <details class="drop" id="f-countries">
+          <summary><span class="lbl">Země</span> <b id="f-countries-label">–</b></summary>
+          <div class="drop-body">
+            <label class="switch"><input type="checkbox" id="f-multi"> Porovnat více zemí</label>
+            <div class="chips" id="f-countries-list"></div>
+          </div>
+        </details>
+
+        <div class="seg" id="f-period" role="group" aria-label="Období">
+          <button data-v="1d">Včera</button>
+          <button data-v="7d">7 dní</button>
+          <button data-v="30d">30 dní</button>
+          <button data-v="ytd">Letos</button>
+          <button data-v="lastyear">Loni</button>
+          <button data-v="custom">Vlastní</button>
+        </div>
+        <div class="range" id="f-range" hidden>
+          <input type="date" id="f-from" aria-label="Od"> – <input type="date" id="f-to" aria-label="Do">
+        </div>
+
+        <div class="seg" id="f-step" role="group" aria-label="Krok">
+          <button data-v="hour">Hodina</button>
+          <button data-v="day">Den</button>
+          <button data-v="month">Měsíc</button>
+          <button data-v="year">Rok</button>
+        </div>
+      </div>
+
+      <p class="notice" id="p-notice" hidden></p>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 id="p-title">Výroba</h2>
+          <span class="muted" id="p-unit"></span>
+        </div>
+        <div class="legend" id="p-legend" aria-label="Zdroje (klepnutím vypnete / zapnete)"></div>
+        <div id="chart-main" class="chart"></div>
+        <p class="hint">Barvy = výroba podle zdroje (pod nulou nabíjení přečerpávacích elektráren a baterií), černá čára = zatížení (spotřeba). Výroba nad čarou se vyváží, pod ní se dováží. Klepnutím na zdroj v legendě ho skryjete.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Souhrn za období</h2><span class="muted" id="p-range-label"></span></div>
+        <div class="kpis" id="p-kpis"></div>
+        <div id="chart-donut" class="chart donut"></div>
+      </div>
+
+      <div class="card" id="cmp-card" hidden>
+        <div class="card-head">
+          <h2>Porovnání zemí</h2>
+          <label class="muted">řadit podle <select id="cmp-sort"></select></label>
+        </div>
+        <div id="chart-cmp" class="chart cmp"></div>
+      </div>
+    </section>
+
+    <!-- ================= Toky ================= -->
+    <section id="view-toky" class="view" hidden>
+      <div class="filters">
+        <div class="seg" id="m-period" role="group" aria-label="Období">
+          <button data-v="day">Den</button>
+          <button data-v="7d">7 dní</button>
+          <button data-v="30d">30 dní</button>
+          <button data-v="ytd">Letos</button>
+          <button data-v="lastyear">Loni</button>
+        </div>
+        <div class="dayrow" id="m-dayrow">
+          <button class="icon" id="m-prev" aria-label="Předchozí den">‹</button>
+          <input type="date" id="m-date" aria-label="Den">
+          <button class="icon" id="m-next" aria-label="Další den">›</button>
+        </div>
+        <div class="hourrow" id="m-hourrow">
+          <button class="icon play" id="m-play" aria-label="Přehrát po hodinách">▶</button>
+          <input type="range" id="m-hour" min="-1" max="23" value="-1" aria-label="Hodina">
+          <span id="m-hour-label" class="hour-label">celý den</span>
+        </div>
+      </div>
+      <p class="notice" id="m-notice" hidden></p>
+      <div class="map-wrap">
+        <div id="map" class="chart map"></div>
+        <div class="map-caption" id="m-caption"></div>
+      </div>
+      <div class="map-legend">
+        <span><i class="sw imp"></i>čistý dovoz</span>
+        <span><i class="sw neu"></i>vyrovnané</span>
+        <span><i class="sw exp"></i>čistý vývoz</span>
+        <span><i class="arrow"></i>tok (tloušťka = objem)</span>
+      </div>
+      <p class="hint">Klepněte na stát nebo šipku pro detail. Mapu lze přiblížit dvěma prsty.</p>
+    </section>
+  </main>
+
+  <!-- bottom sheet (detail státu / hranice) -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet-inner">
+      <button class="sheet-close icon" id="sheet-close" aria-label="Zavřít">✕</button>
+      <div id="sheet-body"></div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span id="attribution">Data: <a href="https://energy-charts.info" rel="noopener">energy-charts.info</a> (Fraunhofer ISE), původně ENTSO-E ·
+      licence <a href="https://creativecommons.org/licenses/by/4.0/deed.cs" rel="noopener">CC BY 4.0</a>;
+      upraveno (čtvrthodinové hodnoty zprůměrovány na hodiny a sečteny po dnech a měsících)</span>
+    <span id="updated"></span>
+  </footer>
+</body>
+</html>

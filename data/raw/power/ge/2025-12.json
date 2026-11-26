@@ -1,0 +1,14 @@
+{
+  "country": "ge",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["gas", "hydro_run_of_river", "hydro_reservoir", "wind_onshore", "load"],
+  "hours": [
+    {"t": "2025-12-31T21:00Z", "v": [740.3, 291.4, 401.9, 1.2, 2349]},
+    {"t": "2025-12-31T22:00Z", "v": [740.8, 291.2, 330.6, 0, 2267.8]},
+    {"t": "2025-12-31T23:00Z", "v": [742, 283, 194.1, 0, 2186.6]}
+  ]
+}

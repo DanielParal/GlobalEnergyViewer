@@ -1,0 +1,14 @@
+{
+  "country": "me",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["lignite", "hydro_reservoir", "wind_onshore", "load"],
+  "hours": [
+    {"t": "2025-12-31T21:00Z", "v": [185.4, 288.7, 11.4, 554.6]},
+    {"t": "2025-12-31T22:00Z", "v": [185.9, 165.4, 13.9, 523.6]},
+    {"t": "2025-12-31T23:00Z", "v": [184.7, 173.4, 10.2, 504.6]}
+  ]
+}

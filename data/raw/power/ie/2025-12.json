@@ -1,0 +1,14 @@
+{
+  "country": "ie",
+  "month": "2025-12",
+  "unit": "MW",
+  "note": "hourly mean (= MWh per hour), UTC; load = consumption",
+  "source": "energy-charts.info /v2/public_power",
+  "license": "CC BY 4.0, attribution: energy-charts.info",
+  "series": ["hard_coal", "peat", "gas", "oil", "other", "hydro_run_of_river", "hydro_pumped_storage", "wind_onshore", "hydro_pumped_storage_consumption", "load"],
+  "hours": [
+    {"t": "2025-12-31T21:00Z", "v": [0, 41.3, 1227.7, 281.8, 0, 63.3, 0, 946.5, 0, 4272.1]},
+    {"t": "2025-12-31T22:00Z", "v": [0, 41.2, 1102.9, 177.4, 0, 63.8, 0, 1095.6, 0, 4055.5]},
+    {"t": "2025-12-31T23:00Z", "v": [0, 41.3, 931.5, 164.4, 0, 63.5, 0, 1214.5, 0, 3974.2]}
+  ]
+}
